@@ -317,8 +317,8 @@ class SelectComponent extends HTMLSelectElement {
                 if (newValue === null) {
                     for (this._tmp of this._options) {
                         this._optionsContainer.appendChild(this._tmp);
-                        this.nodesUnhighlight(this._optionsContainer);
                     }
+                    this.nodesUnhighlight(this._optionsContainer);
 
                     this._selectSearchContainer.remove();
                 } else {
@@ -348,10 +348,9 @@ class SelectComponent extends HTMLSelectElement {
             } else {
                 this._tmp.remove();
             }
-
-            this.nodesUnhighlight(this._optionsContainer);
-            this.nodesHighlight(this._optionsContainer, this._selectSearch.value.trim().toLowerCase());
         }
+        this.nodesUnhighlight(this._optionsContainer);
+        this.nodesHighlight(this._optionsContainer, this._selectSearch.value.trim().toLowerCase());
     }
 
     createElement(obj = {}) {
