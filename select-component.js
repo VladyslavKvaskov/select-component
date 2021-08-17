@@ -18,6 +18,8 @@ class SelectComponent extends HTMLSelectElement {
 
         this._selectButton = this.createElement({
             tag: 'button',
+            type: 'button',
+            class: 'select-button',
         });
 
         this._optionsContainer = this.createElement({
@@ -42,13 +44,45 @@ class SelectComponent extends HTMLSelectElement {
             placeholder: 'Search...',
         });
 
+        this._selectAll = this.createElement({
+            tag: 'button',
+            type: 'button',
+            class: 'selectall-button',
+        });
+
+        this._selectAll.addEventListener('click', () => {
+            this._selectAll.classList.toggle('selected');
+            for (let i = 0; i < this.options.length; i++) {
+                if (this._selectAll.classList.contains('selected')) {
+                    if (!this.options[i].selected) {
+                        this.options[i].selected = true;
+                        this._options[i].classList.add('selected');
+                    }
+                } else {
+                    if (this.options[i].selected) {
+                        this.options[i].selected = false;
+                        this._options[i].classList.remove('selected');
+                    }
+                }
+            }
+
+            if (this._selectAll.classList.contains('selected')) {
+                this._selectAll.textContent = 'Deselect all';
+            } else {
+                this._selectAll.textContent = 'Select all';
+            }
+
+            this.setValue();
+            this.dispatchEvent(new Event('change'));
+        });
+
         this._selectSearchContainer.appendChild(this._selectSearch);
 
         document.addEventListener('click', (e) => {
             if (e.target.closest('.select-container') !== this._selectContainer) {
                 this._select.classList.remove('show');
                 this.timeoutShow = setTimeout(() => {
-                    this._selectDropdown.remove();
+                    this._dropdownContainer.remove();
                 }, 150);
             }
         });
@@ -58,14 +92,14 @@ class SelectComponent extends HTMLSelectElement {
             clearTimeout(this.showTimeout);
             if (e.target.closest('button') === this._selectButton) {
                 if (!this._select.classList.contains('show')) {
-                    this._dropdownContainer.appendChild(this._selectDropdown);
+                    this._select.appendChild(this._dropdownContainer);
                     this.showTimeout = setTimeout(() => {
                         this._select.classList.add('show');
-                    }, 150);
+                    });
                 } else {
                     this._select.classList.remove('show');
                     this.hideTimeout = setTimeout(() => {
-                        this._selectDropdown.remove();
+                        this._dropdownContainer.remove();
                     }, 150);
                 }
             }
@@ -110,16 +144,7 @@ class SelectComponent extends HTMLSelectElement {
         }
 
         this._selectSearch.addEventListener('input', () => {
-            for (this._tmp of this._options) {
-                if (this._tmp.textContent.trim().toLowerCase().includes(this._selectSearch.value.trim().toLowerCase())) {
-                    this._optionsContainer.appendChild(this._tmp);
-                } else {
-                    this._tmp.remove();
-                }
-
-                this.nodesUnhighlight(this._optionsContainer);
-                this.nodesHighlight(this._optionsContainer, this._selectSearch.value.trim().toLowerCase());
-            }
+            this.search();
         });
 
         delete this._option;
@@ -131,22 +156,36 @@ class SelectComponent extends HTMLSelectElement {
         this._selectContainer.appendChild(this);
         this._selectButton.appendChild(this._value);
         this._select.appendChild(this._selectButton);
-        this._selectDropdown.appendChild(this._selectSearchContainer);
+        // this._selectDropdown.appendChild(this._selectSearchContainer);
         this._selectDropdown.appendChild(this._optionsContainer);
-        // this._dropdownContainer.appendChild(this._selectDropdown);
-        this._select.appendChild(this._dropdownContainer);
+        this._dropdownContainer.appendChild(this._selectDropdown);
         this._shadowDOM.appendChild(
             this.createElement({
                 tag: 'style',
                 html: `
+                    *{
+                        box-sizing: border-box;
+                        -webkit-overflow-scrolling: touch;
+                    }
                     button{
                         -webkit-appearance: button;
                         appearance: button;
+                    }
+                    .select-button{
                         background: #fff;
                         border: 1px solid #8a909d;
                         height: 30px;
                         border-radius: 4px;
                         cursor: pointer;
+                        min-width: 100%;
+                    }
+                    .selectall-button{
+                        border-radius: 0;
+                        width: 100%;
+                        background: #fff;
+                        border: none;
+                        cursor: pointer;
+                        height: 30px;
                     }
                     .dropdown-container{
                         position: relative;
@@ -154,7 +193,8 @@ class SelectComponent extends HTMLSelectElement {
                         will-change: transform, opacity;
                         opacity: 0;
                         transform: scale(0.8);
-                        min-width: 110px;
+                        min-width: 100%;
+                        z-index: 3;
                     }
                     .show .dropdown-container{
                         opacity: 1;
@@ -164,10 +204,10 @@ class SelectComponent extends HTMLSelectElement {
                         position: absolute;
                         top: 0;
                         left: 0;
-                        min-width: fit-content;
                         border: 1px solid #8a909d;
                         border-radius: 4px;
                         overflow: hidden;
+                        min-width: 100%;
                     }
                     span.highlight{
                         background: #fec400;
@@ -182,7 +222,7 @@ class SelectComponent extends HTMLSelectElement {
                         width: fit-content;
                         margin-right: 10px;
                         position: relative;
-                        min-width: 50px;
+                        min-width: 86px;
                     }
                     .value::after{
                         content: '';
@@ -202,6 +242,8 @@ class SelectComponent extends HTMLSelectElement {
                     }
                     .options{
                         user-select: none;
+                        max-height: 300px;
+                        overflow: auto;
                     }
                     .option:hover{
                         background: #e6f4fc;
@@ -220,6 +262,18 @@ class SelectComponent extends HTMLSelectElement {
                         outline: none;
                         border: none;
                         padding: 5px 10px;
+                        -webkit-appearance: textfield;
+                        appearance: textfield;
+                    }
+                    ::-webkit-scrollbar{
+                        width: 5px;
+                        height: 5px;
+                    }
+                    ::-webkit-scrollbar-track{
+                        background: #fcfcfc;
+                    }
+                    ::-webkit-scrollbar-thumb{
+                        background: #ccc;
                     }
                 `,
             })
@@ -232,24 +286,72 @@ class SelectComponent extends HTMLSelectElement {
         });
 
         this.setValue();
+
+        if (this.getAttribute('search') !== null) {
+            this._selectDropdown.insertAdjacentElement('afterbegin', this._selectSearchContainer);
+        }
+
+        if (this.getAttribute('selectall') !== null && this.getAttribute('multiple') !== null) {
+            this._optionsContainer.insertAdjacentElement('beforebegin', this._selectAll);
+        }
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'multiple') {
-            for (let i = 0; i < this.options.length; i++) {
-                if (this.options[i].selected) {
-                    this._options[i].classList.add('selected');
+        if (oldValue !== newValue && this.connected) {
+            if (name === 'multiple') {
+                for (let i = 0; i < this.options.length; i++) {
+                    if (this.options[i].selected) {
+                        this._options[i].classList.add('selected');
+                    } else {
+                        this._options[i].classList.remove('selected');
+                    }
+                }
+
+                if (this.getAttribute('selectall') === null) {
+                    this._selectAll.remove();
                 } else {
-                    this._options[i].classList.remove('selected');
+                    this._optionsContainer.insertAdjacentElement('beforebegin', this._selectAll);
+                }
+                this.dispatchEvent(new Event('change'));
+            } else if (name === 'search') {
+                if (newValue === null) {
+                    for (this._tmp of this._options) {
+                        this._optionsContainer.appendChild(this._tmp);
+                        this.nodesUnhighlight(this._optionsContainer);
+                    }
+
+                    this._selectSearchContainer.remove();
+                } else {
+                    this._selectDropdown.insertAdjacentElement('afterbegin', this._selectSearchContainer);
+                    this.search();
+                }
+            } else if (name === 'selectall') {
+                if (this.getAttribute('multiple') !== null) {
+                    if (newValue === null) {
+                        this._selectAll.remove();
+                    } else {
+                        this._optionsContainer.insertAdjacentElement('beforebegin', this._selectAll);
+                    }
                 }
             }
         }
-
-        this.setValue();
     }
 
     static get observedAttributes() {
-        return ['multiple', 'nosearch'];
+        return ['multiple', 'search', 'selectall'];
+    }
+
+    search() {
+        for (this._tmp of this._options) {
+            if (this._tmp.textContent.trim().toLowerCase().includes(this._selectSearch.value.trim().toLowerCase())) {
+                this._optionsContainer.appendChild(this._tmp);
+            } else {
+                this._tmp.remove();
+            }
+
+            this.nodesUnhighlight(this._optionsContainer);
+            this.nodesHighlight(this._optionsContainer, this._selectSearch.value.trim().toLowerCase());
+        }
     }
 
     createElement(obj = {}) {
@@ -276,28 +378,26 @@ class SelectComponent extends HTMLSelectElement {
     }
 
     setValue() {
-        this._value.textContent = `${(() => {
-            this._tmp = [];
+        this._tmp = [];
 
-            for (this._option of this.options) {
-                if (this._option.selected) {
-                    this._tmp.push(this._option.textContent);
-                }
+        for (this._option of this.options) {
+            if (this._option.selected) {
+                this._tmp.push(this._option.textContent);
             }
+        }
 
-            delete this._option;
-            if (this._tmp.length === 0) {
-                this._value.classList.add('placeholder');
-                return 'None selected';
+        delete this._option;
+        if (this._tmp.length === 0) {
+            this._value.classList.add('placeholder');
+            this._value.textContent = 'None selected';
+        } else {
+            this._value.classList.remove('placeholder');
+            if (this._tmp.length === 1) {
+                this._value.textContent = this._tmp.join(', ');
             } else {
-                this._value.classList.remove('placeholder');
-                if (this._tmp.length === 1) {
-                    return this._tmp.join(', ');
-                } else {
-                    return this._tmp.length + ' selected';
-                }
+                this._value.textContent = this._tmp.length + ' selected';
             }
-        })()}`;
+        }
     }
 
     nodesHighlight(node, re) {
@@ -313,15 +413,9 @@ class SelectComponent extends HTMLSelectElement {
                     this.wordClone = this.wordNode.cloneNode(true);
                     this.highlighter.appendChild(this.wordClone);
                     this.wordNode.parentNode.replaceChild(this.highlighter, this.wordNode);
-                    return 1; //skip added node in parent
+                    return 1;
                 }
-            } else if (
-                node.nodeType === 1 &&
-                node.childNodes && // only element nodes that have children
-                !/(script|style)/i.test(node.tagName) && // ignore script and style nodes
-                !(node.tagName === 'span'.toUpperCase() && node.className === 'highlight')
-            ) {
-                // skip if already highlighted
+            } else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName) && !(node.tagName === 'span'.toUpperCase() && node.className === 'highlight')) {
                 for (let i = 0; i < node.childNodes.length; i++) {
                     i += this.nodesHighlight(node.childNodes[i], this.re, 'span', 'highlight');
                 }
@@ -337,10 +431,62 @@ class SelectComponent extends HTMLSelectElement {
             this.pNode.normalize();
         }
     }
+
+    connectedCallback() {
+        this.connected = true;
+        this.allSelected = true;
+        setTimeout(() => {
+            this._tmp = [];
+            this._val = '';
+            for (let i = 0; i < this.options.length; i++) {
+                if (this.options[i].selected) {
+                    this._options[i].classList.add('selected');
+                    this._tmp.push(this._options[i].textContent);
+                } else {
+                    this.allSelected = false;
+                    this._options[i].classList.remove('selected');
+                }
+            }
+
+            if (this.allSelected) {
+                this._selectAll.textContent = 'Deselect all';
+                this._selectAll.classList.add('selected');
+            } else {
+                this._selectAll.textContent = 'Select all';
+                this._selectAll.classList.remove('selected');
+            }
+
+            if (this._tmp.length === 0) {
+                this._value.classList.add('placeholder');
+                this._value.textContent = 'None selected';
+            } else {
+                this._value.classList.remove('placeholder');
+                if (this._tmp.length === 1) {
+                    this._value.textContent = this._tmp.join(', ');
+                } else {
+                    this._value.textContent = this._tmp.length + ' selected';
+                }
+            }
+        });
+    }
 }
+
+// class SelectComponent2 extends SelectComponent {
+//     constructor() {
+//         super();
+
+//         this.addEventListener('change', () => {
+//             console.log(4);
+//         });
+//     }
+// }
 
 document.addEventListener('DOMContentLoaded', () => {
     customElements.define('select-component', SelectComponent, {
         extends: 'select',
     });
+
+    // customElements.define('select-component2', SelectComponent2, {
+    //     extends: 'select',
+    // });
 });
