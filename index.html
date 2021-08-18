@@ -7,7 +7,7 @@
     <script src="select-component.js"></script>
 </head>
 <body>
-    <select is="select-component" multiple selectall search>
+    <select is="select-component" multiple selectall search selected-options=".selected-options">
         <option value="1">option 1</option>
         <option value="2">option 2</option>
         <option value="3">option 3</option>
@@ -76,5 +76,8 @@
         <option value="6">option 6</option>
         <option value="7">option 7</option>
     </select>
+
+    <div class="selected-options"></div>
+    <div class="selected-options2"></div>
 </body>
 </html>

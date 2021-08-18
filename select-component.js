@@ -50,18 +50,63 @@ class SelectComponent extends HTMLSelectElement {
             class: 'selectall-button',
         });
 
+        if (this.getAttribute('selected-options') !== null) {
+            try {
+                if (document.querySelector(this.getAttribute('selected-options'))) {
+                    this._selectedOptions = document.querySelector(this.getAttribute('selected-options'));
+                }
+            } catch (err) {}
+        }
+
+        if (!document.querySelector('.select-component-css')) {
+            document.head.insertAdjacentHTML(
+                'afterbegin',
+                `
+                <style class="select-component-css">
+                    .selected-option-button{
+                        -webkit-appearance: button;
+                        appearance: button;
+                        border: none;
+                        background-color: #4c84ff;
+                        color: #fff;
+                        border-radius: 4px;
+                        padding: 3px 5px;
+                        font-size: 12px;
+                        margin: 5px 5px 0 0;
+                        cursor: pointer;
+                        transition: 0.3s;
+                    }
+
+                    .selected-option-button:nth-child(1){
+                        margin-left: 0;
+                    }
+
+                    .selected-option-button:hover{
+                        background-color: #1961ff;
+                    }
+                </style>
+            `
+            );
+        }
+
         this._selectAll.addEventListener('click', () => {
             this._selectAll.classList.toggle('selected');
             for (let i = 0; i < this.options.length; i++) {
                 if (this._selectAll.classList.contains('selected')) {
                     if (!this.options[i].selected) {
                         this.options[i].selected = true;
-                        this._options[i].classList.add('selected');
+                        this._options[i].option.classList.add('selected');
+                        if (this._selectedOptions) {
+                            this._selectedOptions.insertAdjacentElement('afterbegin', this._options[i].bttn);
+                        }
                     }
                 } else {
                     if (this.options[i].selected) {
                         this.options[i].selected = false;
-                        this._options[i].classList.remove('selected');
+                        this._options[i].option.classList.remove('selected');
+                        if (this._selectedOptions) {
+                            this._options[i].bttn.remove();
+                        }
                     }
                 }
             }
@@ -108,39 +153,60 @@ class SelectComponent extends HTMLSelectElement {
         this._options = [];
 
         for (let option of this.options) {
-            this._options.push(
-                this.createElement({
+            this._options.push({
+                option: this.createElement({
                     class: `option ${option.selected ? 'selected' : ''}`,
-                    handler: (el) => {
-                        el.addEventListener('click', () => {
-                            if (this.getAttribute('multiple') === null) {
-                                option.selected = true;
-                            } else {
-                                if (option.selected) {
-                                    option.selected = false;
-                                    el.classList.remove('selected');
-                                } else {
-                                    option.selected = true;
-                                    el.classList.add('selected');
-                                }
-                            }
-                            if (this.getAttribute('multiple') === null) {
-                                for (let i = 0; i < this.options.length; i++) {
-                                    if (this.options[i].selected) {
-                                        this._options[i].classList.add('selected');
-                                    } else {
-                                        this._options[i].classList.remove('selected');
-                                    }
-                                }
-                            }
-                            this.dispatchEvent(new Event('change'));
-                        });
-                    },
                     text: option.textContent,
-                })
-            );
+                }),
 
-            this._optionsContainer.appendChild(this._options[this._options.length - 1]);
+                bttn: this.createElement({
+                    tag: 'button',
+                    type: 'button',
+                    class: 'selected-option-button',
+                    text: option.textContent,
+                }),
+            });
+
+            let els = this._options[this._options.length - 1];
+
+            els.option.addEventListener('click', () => {
+                if (this.getAttribute('multiple') === null) {
+                    option.selected = true;
+                } else {
+                    if (option.selected) {
+                        option.selected = false;
+                        els.option.classList.remove('selected');
+                        if (this._selectedOptions) {
+                            els.bttn.remove();
+                        }
+                    } else {
+                        option.selected = true;
+                        els.option.classList.add('selected');
+                        if (this._selectedOptions) {
+                            this._selectedOptions.insertAdjacentElement('afterbegin', els.bttn);
+                        }
+                    }
+                }
+                if (this.getAttribute('multiple') === null) {
+                    for (let i = 0; i < this.options.length; i++) {
+                        if (this.options[i].selected) {
+                            this._options[i].option.classList.add('selected');
+                        } else {
+                            this._options[i].option.classList.remove('selected');
+                        }
+                    }
+                }
+                this.dispatchEvent(new Event('change'));
+            });
+
+            els.bttn.addEventListener('click', () => {
+                option.selected = false;
+                els.option.classList.remove('selected');
+                els.bttn.remove();
+                this.setValue();
+            });
+
+            this._optionsContainer.appendChild(this._options[this._options.length - 1].option);
         }
 
         this._selectSearch.addEventListener('input', () => {
@@ -156,7 +222,6 @@ class SelectComponent extends HTMLSelectElement {
         this._selectContainer.appendChild(this);
         this._selectButton.appendChild(this._value);
         this._select.appendChild(this._selectButton);
-        // this._selectDropdown.appendChild(this._selectSearchContainer);
         this._selectDropdown.appendChild(this._optionsContainer);
         this._dropdownContainer.appendChild(this._selectDropdown);
         this._shadowDOM.appendChild(
@@ -170,6 +235,9 @@ class SelectComponent extends HTMLSelectElement {
                     button{
                         -webkit-appearance: button;
                         appearance: button;
+                    }
+                    .select{
+                        color: #000;
                     }
                     .select-button{
                         background: #fff;
@@ -208,6 +276,7 @@ class SelectComponent extends HTMLSelectElement {
                         border-radius: 4px;
                         overflow: hidden;
                         min-width: 100%;
+                        background: #fff;
                     }
                     span.highlight{
                         background: #fec400;
@@ -301,9 +370,9 @@ class SelectComponent extends HTMLSelectElement {
             if (name === 'multiple') {
                 for (let i = 0; i < this.options.length; i++) {
                     if (this.options[i].selected) {
-                        this._options[i].classList.add('selected');
+                        this._options[i].option.classList.add('selected');
                     } else {
-                        this._options[i].classList.remove('selected');
+                        this._options[i].option.classList.remove('selected');
                     }
                 }
 
@@ -316,7 +385,7 @@ class SelectComponent extends HTMLSelectElement {
             } else if (name === 'search') {
                 if (newValue === null) {
                     for (this._tmp of this._options) {
-                        this._optionsContainer.appendChild(this._tmp);
+                        this._optionsContainer.appendChild(this._tmp.option);
                     }
                     this.nodesUnhighlight(this._optionsContainer);
 
@@ -333,20 +402,41 @@ class SelectComponent extends HTMLSelectElement {
                         this._optionsContainer.insertAdjacentElement('beforebegin', this._selectAll);
                     }
                 }
+            } else if (name === 'selected-options') {
+                if (this.getAttribute('selected-options') !== null) {
+                    try {
+                        if (document.querySelector(this.getAttribute('selected-options'))) {
+                            if (this._selectedOptions) {
+                                this._selectedOptions.innerHTML = '';
+                            }
+                            this._selectedOptions = document.querySelector(this.getAttribute('selected-options'));
+
+                            for (let i = 0; i < this.options.length; i++) {
+                                if (this.options[i].selected) {
+                                    this._selectedOptions.insertAdjacentElement('afterbegin', this._options[i].bttn);
+                                }
+                            }
+                        }
+                    } catch (err) {}
+                } else {
+                    if (this._selectedOptions) {
+                        this._selectedOptions.innerHTML = '';
+                    }
+                }
             }
         }
     }
 
     static get observedAttributes() {
-        return ['multiple', 'search', 'selectall'];
+        return ['multiple', 'search', 'selectall', 'selected-options'];
     }
 
     search() {
         for (this._tmp of this._options) {
-            if (this._tmp.textContent.trim().toLowerCase().includes(this._selectSearch.value.trim().toLowerCase())) {
-                this._optionsContainer.appendChild(this._tmp);
+            if (this._tmp.option.textContent.trim().toLowerCase().includes(this._selectSearch.value.trim().toLowerCase())) {
+                this._optionsContainer.appendChild(this._tmp.option);
             } else {
-                this._tmp.remove();
+                this._tmp.option.remove();
             }
         }
         this.nodesUnhighlight(this._optionsContainer);
@@ -439,11 +529,14 @@ class SelectComponent extends HTMLSelectElement {
             this._val = '';
             for (let i = 0; i < this.options.length; i++) {
                 if (this.options[i].selected) {
-                    this._options[i].classList.add('selected');
-                    this._tmp.push(this._options[i].textContent);
+                    this._options[i].option.classList.add('selected');
+                    if (this._selectedOptions) {
+                        this._selectedOptions.insertAdjacentElement('afterbegin', this._options[i].bttn);
+                    }
+                    this._tmp.push(this._options[i].option.textContent);
                 } else {
                     this.allSelected = false;
-                    this._options[i].classList.remove('selected');
+                    this._options[i].option.classList.remove('selected');
                 }
             }
 
@@ -470,22 +563,8 @@ class SelectComponent extends HTMLSelectElement {
     }
 }
 
-// class SelectComponent2 extends SelectComponent {
-//     constructor() {
-//         super();
-
-//         this.addEventListener('change', () => {
-//             console.log(4);
-//         });
-//     }
-// }
-
 document.addEventListener('DOMContentLoaded', () => {
     customElements.define('select-component', SelectComponent, {
         extends: 'select',
     });
-
-    // customElements.define('select-component2', SelectComponent2, {
-    //     extends: 'select',
-    // });
 });
