@@ -97,7 +97,7 @@ class SelectComponent extends HTMLSelectElement {
                         this.options[i].selected = true;
                         this._options[i].option.classList.add('selected');
                         if (this._selectedOptions) {
-                            this._selectedOptions.insertAdjacentElement('afterbegin', this._options[i].bttn);
+                            this._selectedOptions.insertAdjacentElement('beforeend', this._options[i].bttn);
                         }
                     }
                 } else {
@@ -183,7 +183,7 @@ class SelectComponent extends HTMLSelectElement {
                         option.selected = true;
                         els.option.classList.add('selected');
                         if (this._selectedOptions) {
-                            this._selectedOptions.insertAdjacentElement('afterbegin', els.bttn);
+                            this._selectedOptions.insertAdjacentElement('beforeend', els.bttn);
                         }
                     }
                 }
@@ -413,7 +413,7 @@ class SelectComponent extends HTMLSelectElement {
 
                             for (let i = 0; i < this.options.length; i++) {
                                 if (this.options[i].selected) {
-                                    this._selectedOptions.insertAdjacentElement('afterbegin', this._options[i].bttn);
+                                    this._selectedOptions.insertAdjacentElement('beforeend', this._options[i].bttn);
                                 }
                             }
                         }
@@ -531,7 +531,7 @@ class SelectComponent extends HTMLSelectElement {
                 if (this.options[i].selected) {
                     this._options[i].option.classList.add('selected');
                     if (this._selectedOptions) {
-                        this._selectedOptions.insertAdjacentElement('afterbegin', this._options[i].bttn);
+                        this._selectedOptions.insertAdjacentElement('beforeend', this._options[i].bttn);
                     }
                     this._tmp.push(this._options[i].option.textContent);
                 } else {
