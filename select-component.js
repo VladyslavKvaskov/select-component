@@ -376,6 +376,10 @@ class SelectComponent extends HTMLSelectElement {
                     }
                 }
 
+                if (newValue === null && this.getAttribute('selectall') !== null) {
+                    this.removeSelectedOptionsBttns();
+                }
+
                 if (this.getAttribute('selectall') === null) {
                     this._selectAll.remove();
                 } else {
@@ -407,7 +411,7 @@ class SelectComponent extends HTMLSelectElement {
                     try {
                         if (document.querySelector(this.getAttribute('selected-options'))) {
                             if (this._selectedOptions) {
-                                this._selectedOptions.innerHTML = '';
+                                this.removeSelectedOptionsBttns();
                             }
                             this._selectedOptions = document.querySelector(this.getAttribute('selected-options'));
 
@@ -420,10 +424,16 @@ class SelectComponent extends HTMLSelectElement {
                     } catch (err) {}
                 } else {
                     if (this._selectedOptions) {
-                        this._selectedOptions.innerHTML = '';
+                        this.removeSelectedOptionsBttns();
                     }
                 }
             }
+        }
+    }
+
+    removeSelectedOptionsBttns() {
+        for (this._tmp of this._options) {
+            this._tmp?.bttn?.remove();
         }
     }
 
