@@ -53,7 +53,9 @@ class SelectComponent extends HTMLSelectElement {
         this.insertAdjacentElement('beforebegin', this._selectContainer);
         this._selectContainer.appendChild(this);
 
-        this._optionsSelectedDiv = this.createElement();
+        this._optionsSelectedDiv = this.createElement({
+            class: 'selected-options',
+        });
 
         if (this.getAttribute('selected-options') !== null && this.getAttribute('multiple') !== null) {
             try {
