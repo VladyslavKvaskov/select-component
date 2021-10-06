@@ -2,9 +2,13 @@ class SelectComponent extends HTMLSelectElement {
     constructor() {
         super();
 
+        SelectComponent.counter = SelectComponent.counter + 1 || 1;
+
         this._selectContainer = this.createElement({
             class: 'select-container',
         });
+
+        this._selectContainer.classList.add(`select-instance-${SelectComponent.counter}`);
 
         this._shadowDOM = this._selectContainer.attachShadow({ mode: 'closed' });
 
