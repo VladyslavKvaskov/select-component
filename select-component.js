@@ -50,12 +50,24 @@ class SelectComponent extends HTMLSelectElement {
             class: 'selectall-button',
         });
 
-        if (this.getAttribute('selected-options') !== null) {
+        this.insertAdjacentElement('beforebegin', this._selectContainer);
+        this._selectContainer.appendChild(this);
+
+        this._optionsSelectedDiv = this.createElement();
+
+        if (this.getAttribute('selected-options') !== null && this.getAttribute('multiple') !== null) {
             try {
-                if (document.querySelector(this.getAttribute('selected-options'))) {
-                    this._selectedOptions = document.querySelector(this.getAttribute('selected-options'));
-                }
-            } catch (err) {}
+                this._selectedOptions = document.querySelector(this.getAttribute('selected-options'));
+            } catch (err) {
+                this._selectedOptions = null;
+            }
+
+            if (!this._selectedOptions) {
+                this._selectedOptions = this._optionsSelectedDiv;
+                this._selectContainer.insertAdjacentElement('afterend', this._optionsSelectedDiv);
+            } else {
+                this._optionsSelectedDiv.remove();
+            }
         }
 
         if (!document.querySelector('.select-component-css')) {
@@ -186,6 +198,14 @@ class SelectComponent extends HTMLSelectElement {
                             this._selectedOptions.insertAdjacentElement('beforeend', els.bttn);
                         }
                     }
+
+                    if (this.options.length === Array.from(this.options).filter((a) => a.selected).length) {
+                        this._selectAll.textContent = 'Deselect all';
+                        this._selectAll.classList.add('selected');
+                    } else {
+                        this._selectAll.textContent = 'Select all';
+                        this._selectAll.classList.remove('selected');
+                    }
                 }
                 if (this.getAttribute('multiple') === null) {
                     for (let i = 0; i < this.options.length; i++) {
@@ -218,8 +238,6 @@ class SelectComponent extends HTMLSelectElement {
         this._selectContainer.style['display'] = 'inline-block';
         this._selectContainer.style['min-width'] = '50px';
 
-        this.insertAdjacentElement('beforebegin', this._selectContainer);
-        this._selectContainer.appendChild(this);
         this._selectButton.appendChild(this._value);
         this._select.appendChild(this._selectButton);
         this._selectDropdown.appendChild(this._optionsContainer);
@@ -378,6 +396,8 @@ class SelectComponent extends HTMLSelectElement {
 
                 if (newValue === null && this.getAttribute('selectall') !== null) {
                     this.removeSelectedOptionsBttns();
+                } else if (newValue !== null && this.getAttribute('selectall') !== null) {
+                    this.getSelectedOptionsElement();
                 }
 
                 if (this.getAttribute('selectall') === null) {
@@ -407,26 +427,39 @@ class SelectComponent extends HTMLSelectElement {
                     }
                 }
             } else if (name === 'selected-options') {
-                if (this.getAttribute('selected-options') !== null) {
-                    try {
-                        if (document.querySelector(this.getAttribute('selected-options'))) {
-                            if (this._selectedOptions) {
-                                this.removeSelectedOptionsBttns();
-                            }
-                            this._selectedOptions = document.querySelector(this.getAttribute('selected-options'));
-
-                            for (let i = 0; i < this.options.length; i++) {
-                                if (this.options[i].selected) {
-                                    this._selectedOptions.insertAdjacentElement('beforeend', this._options[i].bttn);
-                                }
-                            }
-                        }
-                    } catch (err) {}
+                if (this.getAttribute('selected-options') !== null && this.getAttribute('multiple') !== null) {
+                    this.getSelectedOptionsElement();
                 } else {
                     if (this._selectedOptions) {
                         this.removeSelectedOptionsBttns();
                     }
+                    this._optionsSelectedDiv.remove();
                 }
+            }
+        }
+    }
+
+    getSelectedOptionsElement() {
+        try {
+            this._selectedOptions = document.querySelector(this.getAttribute('selected-options'));
+        } catch (err) {
+            this._selectedOptions = null;
+        }
+
+        if (!this._selectedOptions) {
+            this._selectedOptions = this._optionsSelectedDiv;
+            this._selectContainer.insertAdjacentElement('afterend', this._optionsSelectedDiv);
+        } else {
+            this._optionsSelectedDiv.remove();
+        }
+
+        if (this._selectedOptions) {
+            this.removeSelectedOptionsBttns();
+        }
+
+        for (let i = 0; i < this.options.length; i++) {
+            if (this.options[i].selected) {
+                this._selectedOptions.insertAdjacentElement('beforeend', this._options[i].bttn);
             }
         }
     }
