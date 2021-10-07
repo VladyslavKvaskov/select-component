@@ -368,6 +368,7 @@ class SelectComponent extends HTMLSelectElement {
                     ::-webkit-scrollbar-thumb{
                         background: #ccc;
                     }
+                    ${SelectComponent.styles ? SelectComponent.styles : ''}
                 `,
             })
         );
